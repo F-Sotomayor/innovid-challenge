@@ -1,29 +1,20 @@
 /* eslint-disable prettier/prettier */
 /* eslint-disable no-console */
 import * as React from "react";
-import axios from "axios";
 
 import Server from "../components/Server";
 
 import styles from "./App.module.scss";
 
 const App: React.FC = () => {
-  const amount = [1, 2, 3, 4];
-  const [servers, setServers] = React.useState([]);
+  const [servers, setServers] = React.useState([
+    { id: "0", load: 0, status: false },
+    { id: "1", load: 0, status: false },
+    { id: "2", load: 0, status: false },
+    { id: "3", load: 0, status: false },
+  ]);
 
-  React.useEffect(() => {
-    amount.map((sv) => {
-      axios
-        .get(`http://localhost:8000/status/${sv}`)
-        .then((response) =>
-          setServers((server) =>
-            server.concat({ status: true, ...response.data })
-          )
-        );
-    });
-  }, []);
-
-  function handleServerChange(id) {
+  function handleServerChange(id: string) {
     setServers((servers) =>
       servers.map((server) => {
         return server.id !== id
@@ -33,36 +24,13 @@ const App: React.FC = () => {
     );
   }
 
-  async function getLoad(id: number) {
-    await axios
-      .get(`http://localhost:8000/status/${id}`)
-      .then((response) => response.data)
-      .then((data) => {
-        return data.load;
-      });
-  }
-
-  React.useEffect(() => {
-    let timeout: any;
-
-    // eslint-disable-next-line prefer-const
-    timeout = setTimeout(() => {
-      setServers((servers: any) =>
-        servers.map((server: any) =>
-          server.status === false
-            ? server
-            : {
-                ...server,
-                load: console.log(getLoad(server.id)),
-              }
-        )
-      );
-    }, 5000);
-
-    return () => {
-      clearTimeout(timeout);
-    };
-  }, [servers]);
+  const handleUpdateServer = React.useCallback(({ id, load }) => {
+    setServers((servers) =>
+      servers.map((server) => {
+        return server.id !== id ? server : { ...server, load };
+      })
+    );
+  }, []);
 
   return (
     <main className={styles.container}>
@@ -70,16 +38,11 @@ const App: React.FC = () => {
         return (
           <div key={server.id}>
             <Server
-              displayStatus={server.status === true ? "Online" : "Offline"}
               handleStatus={() => handleServerChange(server.id)}
               id={server.id}
-              image={
-                server.status === true
-                  ? "src/assets/pc-on.gif"
-                  : "src/assets/pc-off.png"
-              }
-              load={server.status === false ? `N/A` : `${server.load}%`}
-              status={server.status === true ? "Shutdown" : "Turn On"}
+              load={server.load}
+              status={server.status}
+              updateServerLoad={handleUpdateServer}
             />
             ;
           </div>

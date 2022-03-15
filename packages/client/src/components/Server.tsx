@@ -1,7 +1,38 @@
 /* eslint-disable prettier/prettier */
 import * as React from "react";
+import axios from "axios";
 
-const Server = ({ id, load, status, handleStatus, image, displayStatus }) => {
+interface IServer {
+  id: string;
+  load: number;
+  status: boolean;
+  handleStatus: VoidFunction;
+  updateServerLoad: (server: { id: string; load: number }) => void;
+}
+
+const Server: React.VFC<IServer> = ({
+  id,
+  load,
+  status,
+  handleStatus,
+  updateServerLoad,
+}) => {
+  React.useEffect(() => {
+    let interval: number;
+
+    if (status === true) {
+      interval = setInterval(() => {
+        axios.get(`http://localhost:8000/status/${id}`).then((response) => {
+          updateServerLoad(response.data);
+        });
+      }, 5000);
+    }
+
+    return () => {
+      clearInterval(interval);
+    };
+  }, [updateServerLoad, id, status]);
+
   return (
     <div
       style={{
@@ -38,7 +69,12 @@ const Server = ({ id, load, status, handleStatus, image, displayStatus }) => {
           alignItems: "center",
         }}
       >
-        <img src={image} style={{ width: "160px", height: "160px" }} />
+        <img
+          src={
+            status === true ? "src/assets/pc-on.gif" : "src/assets/pc-off.png"
+          }
+          style={{ width: "160px", height: "160px" }}
+        />
       </div>
       <div style={{ display: "flex", width: "100%" }}>
         <div
@@ -51,7 +87,7 @@ const Server = ({ id, load, status, handleStatus, image, displayStatus }) => {
             textTransform: "capitalize",
           }}
         >
-          Status: {displayStatus}
+          Status: {status === true ? "Online" : "Offline"}
         </div>
         <div
           style={{
@@ -66,7 +102,7 @@ const Server = ({ id, load, status, handleStatus, image, displayStatus }) => {
             style={{ width: "100%", height: "100%" }}
             onClick={handleStatus}
           >
-            {status}
+            {status === true ? "Shutdown" : "Turn On"}
           </button>
         </div>
         <div
@@ -78,7 +114,7 @@ const Server = ({ id, load, status, handleStatus, image, displayStatus }) => {
             border: "0.5px solid black",
           }}
         >
-          CPU Usage: {load}
+          CPU Usage: {status === true ? `${load}%` : "N/A"}
         </div>
       </div>
     </div>
